@@ -1,0 +1,16 @@
+[Unit]
+Description=Jellyfin Pushover Webhook Quadlet
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=900
+
+[Install]
+WantedBy=default.target
+
+[Container]
+Image=localhost/pushover-webhook:latest
+ContainerName=pushover-webhook
+HostName=pushover-webhook
+
+PublishPort=8484:8484
