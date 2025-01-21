@@ -14,3 +14,7 @@ ContainerName=pushover-webhook
 HostName=pushover-webhook
 
 PublishPort=8484:8484
+
+Environment=AUTH_TOKEN=
+Environment=PUSHOVER_API_TOKEN=
+Environment=PUSHOVER_USER_KEY=
