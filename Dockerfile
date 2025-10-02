@@ -1,9 +1,9 @@
 # Use an official Python runtime as a parent image
-FROM --platform=$TARGETPLATFORM python:3.10-slim
+FROM --platform=$TARGETPLATFORM python:3.13-slim
 
 # Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # Set the working directory in the container
 WORKDIR /app
