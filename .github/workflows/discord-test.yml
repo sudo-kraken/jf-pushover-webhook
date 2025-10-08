@@ -35,8 +35,8 @@ jobs:
             *)         COLOR=9807270 ;;
           esac
 
-          # Minimal JSON payload with clickable title and colour
-          read -r -d '' PAYLOAD <<EOF
+          # Build JSON payload safely without 'read -d'
+          PAYLOAD=$(cat <<EOF
           {
             "embeds": [{
               "title": "${TITLE}",
@@ -46,6 +46,7 @@ jobs:
             }]
           }
           EOF
+          )
 
           # Do not fail the job if Discord is unreachable
           curl -sS -H "Content-Type: application/json" -X POST -d "$PAYLOAD" "$WEBHOOK_URL" || true
