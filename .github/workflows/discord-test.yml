@@ -1,0 +1,51 @@
+name: Notify Discord on Build Completion
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  publish:
+    name: Dummy Publish Job
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Simulate Build
+        run: |
+          echo "Running simulated build..."
+          sleep 3
+          echo "Build complete!"
+
+  discord:
+    name: Send Discord Notification
+    needs: publish
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Get Build Job Status
+        uses: technote-space/workflow-conclusion-action@45ce8e0eb155657ab8ccf346ade734257fd196a5 # v3.0.3
+
+      - name: Combine Job Status
+        id: status
+        run: |
+          failures=(neutral skipped timed_out action_required)
+          if [[ " ${failures[*]} " =~ " ${WORKFLOW_CONCLUSION} " ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+          else
+            echo "status=$WORKFLOW_CONCLUSION" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Post Status to Discord
+        if: always()
+        run: |
+          WEBHOOK_URL="https://discord.com/api/webhooks/1425399520279134249/_tpbIAr_l4c1TVyTTIfCxTt_4RHeYJP8BNEf6Fj9mrG-XREPrThEzPn1-9g4DWiCqtUK"
+          STATUS="${{ steps.status.outputs.status }}"
+          TITLE="${{ github.workflow }}"
+
+          curl -s -H "Content-Type: application/json" \
+            -X POST \
+            -d "{\"embeds\":[{\"title\":\"${TITLE}\",\"description\":\"Status: ${STATUS}\"}]}" \
+            "$WEBHOOK_URL" || echo "nofail: true"
+        shell: bash
