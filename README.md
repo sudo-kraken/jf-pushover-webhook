@@ -160,7 +160,7 @@ uv run python app/app.py
 
 Linux or WSL using gunicorn:
 ```bash
-uv run gunicorn -b 0.0.0.0:8484 app.app:app
+uv run gunicorn -b 0.0.0.0:8484 app:app
 ```
 
 Windows tip: `gunicorn` is Unix-only. On native Windows use the Flask server above or install `waitress`:
@@ -168,7 +168,7 @@ Windows tip: `gunicorn` is Unix-only. On native Windows use the Flask server abo
 uv add --dev waitress
 $env:PUSHOVER_API_TOKEN="dummy"
 $env:PUSHOVER_USER_KEY="dummy"
-uv run waitress-serve --listen=0.0.0.0:8484 app.app:app
+uv run waitress-serve --listen=0.0.0.0:8484 app:app
 ```
 
 ## Testing
