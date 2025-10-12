@@ -20,4 +20,4 @@ EXPOSE 6969
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8484/health || exit 1
 
-CMD ["uv", "run", "--no-dev", "gunicorn", "-w", "2", "-b", "0.0.0.0:8484", "app.app:app"]
+CMD ["uv", "run", "--no-dev", "gunicorn", "-w", "2", "-b", "0.0.0.0:8484", "app:app"]
