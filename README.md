@@ -7,7 +7,7 @@ A minimal Flask service that accepts webhook calls and forwards notifications to
 Use this relay when you need one or more of the following:
 - **Centralised authentication**: callers only need to know a single `AUTH_TOKEN` for your internal webhook rather than your Pushover credentials.
 - **Request filtering or enrichment**: validate, normalise or enrich incoming requests before forwarding to Pushover.
-- **Network isolation or compliance**: if internal services are not permitted to reach the internet, run this relay on a host that can reach Pusover.
+- **Network isolation or compliance**: if internal services are not permitted to reach the internet, run this relay on a host that can reach Pushover.
 - **Auditability and logging**: a single place to log and observe notifications sent to Pushover.
 
 If you fully control the caller and it can safely reach Pushover, calling their API directly is perfectly fine. This project exists for the cases where an intermediary is desirable or required.
@@ -120,13 +120,13 @@ services:
       - "8484:8484"
     environment:
       AUTH_TOKEN: ${AUTH_TOKEN}
-        PUSHOVER_API_TOKEN: ${PUSHOVER_API_TOKEN}
-        PUSHOVER_USER_KEY: ${PUSHOVER_USER_KEY}
-        JELLYFIN_BASE_URL: ${JELLYFIN_BASE_URL}
-        # Optional
-        REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-10}
-        FLASK_RUN_HOST: 0.0.0.0
-        FLASK_RUN_PORT: 8484
+      PUSHOVER_API_TOKEN: ${PUSHOVER_API_TOKEN}
+      PUSHOVER_USER_KEY: ${PUSHOVER_USER_KEY}
+      JELLYFIN_BASE_URL: ${JELLYFIN_BASE_URL}
+      # Optional
+      REQUEST_TIMEOUT: ${REQUEST_TIMEOUT:-10}
+      FLASK_RUN_HOST: 0.0.0.0
+      FLASK_RUN_PORT: 8484
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:8484/health || exit 1"]
       interval: 30s
