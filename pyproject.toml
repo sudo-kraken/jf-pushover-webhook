@@ -3,6 +3,9 @@ name = "jf-pushover-webhook"
 version = "0.1.0"
 description = "Jellyfin to Pushover webhook service"
 readme = "README.md"
+keywords = ["python", "selfhosted", "homelab", "automation", "devops", "infrastructure", "it", "itops", "sysadmin", "systemadministration", "orchestration", "configurationmanagement"]
+authors = [{ name = "Joe Harrison", email = "sudo-kraken@prxy.8shield.net" }]
+license = { file = "LICENSE" }
 requires-python = ">=3.9"
 dependencies = [
     "flask>=3.1.2",
