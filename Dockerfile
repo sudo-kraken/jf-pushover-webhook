@@ -15,7 +15,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 
 COPY app /app
 
-EXPOSE 6969
+EXPOSE 8484
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8484/health || exit 1
