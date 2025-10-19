@@ -1,6 +1,22 @@
-# jf-pushover-webhook
+<div align="center">
+<img src="https://raw.githubusercontent.com/sudo-kraken//jf-pushover-webhook/main/docs/assets/logo.png" align="center" width="144px" height="144px"/>
 
-A minimal Flask relay that accepts webhook calls and forwards notifications to Pushover. It provides a generic endpoint and a Jellyfin oriented endpoint. Built with uv and suitable for local or containerised runs.
+### Jellyfin PushOver Webhook
+
+_A minimal Flask relay that accepts webhook calls and forwards notifications to Pushover. It provides a generic endpoint and a Jellyfin oriented endpoint. Built with uv and suitable for local or containerised runs._
+
+</div>
+
+<div align="center">
+
+[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/jf-pushover-webhook?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken//jf-pushover-webhook/pkgs/container//jf-pushover-webhook) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2F/jf-pushover-webhook%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/blob/main/pyproject.toml)
+</div>
+
+<div align="center">
+
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/sudo-kraken/jf-pushover-webhook?label=openssf%20scorecard&style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/sudo-kraken/jf-pushover-webhook)
+
+</div>
 
 ## Overview
 
