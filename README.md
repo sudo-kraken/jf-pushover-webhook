@@ -1,10 +1,9 @@
 <div align="center">
-<img src="https://raw.githubusercontent.com/sudo-kraken//jf-pushover-webhook/main/docs/assets/logo.png" align="center" width="144px" height="144px"/>
+<img src="docs/assets/logo.png" align="center" width="144px" height="144px"/>
 
 ### Jellyfin PushOver Webhook
 
 _A minimal Flask relay that accepts webhook calls and forwards notifications to Pushover. It provides a generic endpoint and a Jellyfin oriented endpoint. Built with uv and suitable for local or containerised runs._
-
 </div>
 
 <div align="center">
@@ -17,6 +16,25 @@ _A minimal Flask relay that accepts webhook calls and forwards notifications to 
 [![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/sudo-kraken/jf-pushover-webhook?label=openssf%20scorecard&style=for-the-badge)](https://scorecard.dev/viewer/?uri=github.com/sudo-kraken/jf-pushover-webhook)
 
 </div>
+
+## Contents
+
+- [Overview](#overview)
+- [Architecture at a glance](#architecture-at-a-glance)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick start](#quick-start)
+- [Docker](#docker)
+- [Configuration](#configuration)
+- [Health](#health)
+- [Endpoints](#endpoints)
+- [Production notes](#production-notes)
+- [Development](#development)
+- [Troubleshooting](#troubleshooting)
+- [Licence](#licence)
+- [Security](#security)
+- [Contributing](#contributing)
+- [Support](#support)
 
 ## Overview
 
@@ -34,7 +52,7 @@ The service accepts JSON payloads from upstream systems and relays a formatted m
 - Generic webhook relay via `POST /webhook`
 - Jellyfin compatible relay via `POST /jf-pushover-webhook`
 - Optional Bearer token authentication using `AUTH_TOKEN`
-- Outbound request timeout control
+- Outbound request timeout control with `REQUEST_TIMEOUT`
 - Simple service information page at `/`
 - `/health` endpoint for liveness checks
 - Prebuilt container image on GHCR
@@ -42,7 +60,7 @@ The service accepts JSON payloads from upstream systems and relays a formatted m
 ## Prerequisites
 
 - [Docker](https://www.docker.com/)
-- (Alternatively) [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
+- Alternatively [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
 
 ## Quick start
 
@@ -112,6 +130,8 @@ curl -X POST http://localhost:8484/webhook \
 
 - Set `AUTH_TOKEN` for a simple shared secret. For internet facing deployments put the service behind an authenticating reverse proxy.
 - Tune `WEB_CONCURRENCY` based on CPU cores and expected throughput.
+- Keep `REQUEST_TIMEOUT` conservative to avoid long-hanging outbound calls to Pushover.
+- If running behind a reverse proxy, ensure client IP and scheme are preserved appropriately.
 
 ## Development
 
@@ -125,16 +145,21 @@ uv run pytest --cov
 
 - 401 responses usually indicate a missing or wrong `AUTH_TOKEN` when it is required.
 - 408 or timeouts when sending to Pushover can be reduced by increasing `REQUEST_TIMEOUT`.
+- If payloads are rejected, confirm `Content-Type: application/json` and validate your JSON structure.
 
 ## Licence
-See [LICENSE](LICENSE)
+
+This project is licensed under the MIT Licence. See the [LICENCE](LICENCE) file for details.
 
 ## Security
-See [SECURITY.md](SECURITY.md)
+
+If you discover a security issue, please review and follow the guidance in [SECURITY.md](SECURITY.md), or open a private security-focused issue with minimal details and request a secure contact channel.
 
 ## Contributing
-Feel free to open issues or submit pull requests if you have suggestions or improvements.
+
+Feel free to open issues or submit pull requests if you have suggestions or improvements.  
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Support
-Open an [issue](/../../issues)
+
+Open an [issue](/../../issues) with as much detail as possible, including your environment details and relevant logs or output.
