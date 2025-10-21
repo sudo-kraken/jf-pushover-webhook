@@ -59,7 +59,7 @@ The service accepts JSON payloads from upstream systems and relays a formatted m
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/)
+- [Docker](https://www.docker.com/) / [Kubernetes](https://kubernetes.io/)
 - Alternatively [uv](https://docs.astral.sh/uv/) and Python 3.13 for local development
 
 ## Quick start
@@ -83,6 +83,14 @@ docker run --rm -p 8484:8484 \
   -e PUSHOVER_API_TOKEN=your-app-token \
   -e PUSHOVER_USER_KEY=your-user-key \
   ghcr.io/sudo-kraken/jf-pushover-webhook:latest
+```
+## Kubernetes (Helm)
+
+You can deploy the app on Kubernetes using the published Helm chart:
+
+```bash
+helm install jf-pushover-webhook oci://ghcr.io/sudo-kraken/helm-charts/jf-pushover-webhook \
+  --namespace jf-pushover-webhook --create-namespace
 ```
 
 ## Configuration
