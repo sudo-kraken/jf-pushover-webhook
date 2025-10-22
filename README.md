@@ -8,7 +8,7 @@ _A minimal Flask relay that accepts webhook calls and forwards notifications to 
 
 <div align="center">
 
-[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/jf-pushover-webhook?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken//jf-pushover-webhook/pkgs/container//jf-pushover-webhook) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2F/jf-pushover-webhook%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/blob/main/pyproject.toml)
+[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/jf-pushover-webhook?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken//jf-pushover-webhook/pkgs/container//jf-pushover-webhook) [![Helm](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fhelm-charts%2Frefs%2Fheads%2Fmain%2Fcharts%2Fjf-pushover-webhook%2FChart.yaml&query=%24.version&label=&logo=helm&style=for-the-badge&logoColor=0F1487&color=white)](https://github.com/sudo-kraken/helm-charts/tree/main/charts/jf-pushover-webhook) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2F/jf-pushover-webhook%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/blob/main/pyproject.toml)
 </div>
 
 <div align="center">
