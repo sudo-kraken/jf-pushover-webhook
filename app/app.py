@@ -1,12 +1,12 @@
+import contextlib
 import json
 import logging
 import os
 import re
 import tempfile
-from typing import Dict, Optional, Tuple, Union
 
 import requests
-from flask import Flask, jsonify, request, make_response
+from flask import Flask, jsonify, make_response, request
 
 # WSGI application for gunicorn: "app:app"
 app = Flask(__name__)
@@ -26,7 +26,7 @@ REQUEST_TIMEOUT = int(os.environ.get("REQUEST_TIMEOUT", "10"))
 # ---------------------------------------------------------------------------
 
 
-def _env() -> Dict[str, Optional[str]]:
+def _env() -> dict[str, str | None]:
     """Read configuration from environment safely at request time."""
     return {
         "AUTH_TOKEN": os.environ.get("AUTH_TOKEN"),
@@ -36,14 +36,14 @@ def _env() -> Dict[str, Optional[str]]:
     }
 
 
-def _extract_bearer_token() -> Optional[str]:
+def _extract_bearer_token() -> str | None:
     """Extract Bearer token from the Authorization header if present."""
     auth = request.headers.get("Authorization", "")
     m = re.match(r"Bearer\s+(.+)", auth, flags=re.IGNORECASE)
     return m.group(1) if m else None
 
 
-def _require_bearer_auth(expected: Optional[str]) -> Tuple[bool, Optional[str]]:
+def _require_bearer_auth(expected: str | None) -> tuple[bool, str | None]:
     """Strict Bearer auth to mirror original semantics."""
     if not expected:
         return False, "Service not configured"
@@ -53,7 +53,7 @@ def _require_bearer_auth(expected: Optional[str]) -> Tuple[bool, Optional[str]]:
     return (supplied == expected), None
 
 
-def _parse_payload_by_content_type() -> Union[Dict, Tuple[Dict, int]]:
+def _parse_payload_by_content_type() -> dict | tuple[dict, int]:
     """
     Original content type handling:
     - application/json
@@ -82,7 +82,7 @@ def _parse_payload_by_content_type() -> Union[Dict, Tuple[Dict, int]]:
     return jsonify({"error": "Unsupported Media Type", "content_type": request.content_type}), 415
 
 
-def _build_title_and_body_from_jellyfin(payload: Dict) -> Tuple[str, str]:
+def _build_title_and_body_from_jellyfin(payload: dict) -> tuple[str, str]:
     """Replicate original title and body logic from Jellyfin style fields."""
     item_name = payload.get("ItemName", "Unknown Item")
     series_name = payload.get("SeriesName", "")
@@ -90,16 +90,13 @@ def _build_title_and_body_from_jellyfin(payload: Dict) -> Tuple[str, str]:
     event_id = payload.get("EventId", "Unknown Event")
     item_overview = payload.get("ItemOverview", "No description provided")
 
-    if series_name:
-        title = f"{event_id} - {series_name}: {item_name}"
-    else:
-        title = f"{event_id} - {item_type}: {item_name}"
+    title = f"{event_id} - {series_name}: {item_name}" if series_name else f"{event_id} - {item_type}: {item_name}"
 
     body = item_overview
     return title, body
 
 
-def _resolve_jellyfin_base_url(payload: Dict) -> Optional[str]:
+def _resolve_jellyfin_base_url(payload: dict) -> str | None:
     """
     Resolve the Jellyfin base URL without any hardcoded IP.
     Order of precedence:
@@ -137,7 +134,7 @@ def _download_image_to_temp(image_url: str, suffix: str = ".jpg") -> str:
     return temp_path
 
 
-def _send_pushover(message: str, title: Optional[str], img_path: Optional[str]) -> requests.Response:
+def _send_pushover(message: str, title: str | None, img_path: str | None) -> requests.Response:
     """Send a Pushover message, optionally with an image attachment."""
     cfg = _env()
     if not cfg["PUSHOVER_API_TOKEN"] or not cfg["PUSHOVER_USER_KEY"]:
@@ -151,25 +148,25 @@ def _send_pushover(message: str, title: Optional[str], img_path: Optional[str]) 
     if title:
         data["title"] = title
 
-    files = None
     if img_path:
-        files = {"attachment": ("item_image.jpg", open(img_path, "rb"), "image/jpeg")}
-
-    try:
+        with open(img_path, "rb") as file_handle:
+            files = {"attachment": ("item_image.jpg", file_handle, "image/jpeg")}
+            resp = session.post(
+                "https://api.pushover.net/1/messages.json",
+                data=data,
+                files=files,
+                timeout=REQUEST_TIMEOUT,
+            )
+    else:
         resp = session.post(
             "https://api.pushover.net/1/messages.json",
             data=data,
-            files=files,
+            files=None,
             timeout=REQUEST_TIMEOUT,
         )
-        resp.raise_for_status()
-        return resp
-    finally:
-        if files and "attachment" in files:
-            try:
-                files["attachment"][1].close()
-            except Exception:
-                pass
+
+    resp.raise_for_status()
+    return resp
 
 
 # ---------------------------------------------------------------------------
@@ -222,7 +219,7 @@ def webhook():
     data_or_error = _parse_payload_by_content_type()
     if isinstance(data_or_error, tuple):
         return data_or_error
-    data: Dict = data_or_error if isinstance(data_or_error, dict) else {}
+    data: dict = data_or_error if isinstance(data_or_error, dict) else {}
 
     message = data.get("message") or data.get("msg") or data.get("text")
     if not message:
@@ -248,10 +245,8 @@ def webhook():
         return jsonify({"error": "Internal error", "details": str(e)}), 500
     finally:
         if img_path:
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(img_path)
-            except Exception:
-                pass
 
 
 @app.route("/jf-pushover-webhook", methods=["POST", "GET"])
@@ -277,7 +272,7 @@ def jf_pushover_webhook():
     data_or_error = _parse_payload_by_content_type()
     if isinstance(data_or_error, tuple):
         return data_or_error  # error response
-    data: Dict = data_or_error if isinstance(data_or_error, dict) else {}
+    data: dict = data_or_error if isinstance(data_or_error, dict) else {}
 
     # Build title and body exactly like the original
     title, body = _build_title_and_body_from_jellyfin(data)
@@ -320,10 +315,8 @@ def jf_pushover_webhook():
         return jsonify({"error": "Internal error", "details": str(e)}), 500
     finally:
         if temp_img_path:
-            try:
+            with contextlib.suppress(Exception):
                 os.remove(temp_img_path)
-            except Exception:
-                pass
 
 
 # ---------------------------------------------------------------------------
