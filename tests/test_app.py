@@ -701,7 +701,7 @@ def test_jf_with_configured_base_url_success(monkeypatch):
             allow_redirects=False,
         )
         _, kwargs = mock_post.call_args
-        assert kwargs["data"]["title"].startswith("PlaybackStart - Great Show")
+        assert kwargs["data"]["title"] == "PlaybackStart - Episode: Great Show - Episode 1"
 
 
 def test_jf_title_without_series_uses_itemtype(monkeypatch):

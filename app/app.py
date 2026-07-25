@@ -175,7 +175,10 @@ def _build_title_and_body_from_jellyfin(payload: dict) -> tuple[str, str]:
     event_id = payload_text("EventId", "Unknown Event")
     item_overview = payload_text("ItemOverview", "No description provided")
 
-    title = f"{event_id} - {series_name}: {item_name}" if series_name else f"{event_id} - {item_type}: {item_name}"
+    if series_name:
+        title = f"{event_id} - {item_type}: {series_name} - {item_name}"
+    else:
+        title = f"{event_id} - {item_type}: {item_name}"
 
     return _truncate_text(title, MAX_TITLE_CHARS), _truncate_text(item_overview, MAX_MESSAGE_CHARS)
 
