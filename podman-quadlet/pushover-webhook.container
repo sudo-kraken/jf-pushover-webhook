@@ -14,7 +14,7 @@ Pull=newer
 ContainerName=jf-pushover-webhook
 HostName=jf-pushover-webhook
 
-PublishPort=8484:8484
+PublishPort=127.0.0.1:8484:8484
 
 HealthCmd=curl -fsS http://127.0.0.1:8484/health || exit 1
 HealthInterval=30s
@@ -22,11 +22,7 @@ HealthTimeout=10s
 HealthStartPeriod=10s
 HealthRetries=3
 
-Environment=AUTH_TOKEN=
-Environment=PUSHOVER_API_TOKEN=
-Environment=PUSHOVER_USER_KEY=
-Environment=JELLYFIN_BASE_URL=
-# Optional
-Environment=REQUEST_TIMEOUT=
-Environment=FLASK_RUN_HOST=
-Environment=FLASK_RUN_PORT=
+EnvironmentFile=pushover-webhook.env
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all

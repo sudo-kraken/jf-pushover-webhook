@@ -21,9 +21,9 @@ Here are some tips:
 * Try to define what you need help with:
   * Is there something in particular you want to do?
   * What problem are you encountering and what steps have you taken to try
-        and fix it?
+    and fix it?
   * Is there a concept you don't understand?
-* Provide sample code, such as a a simple snippet, if
+* Provide sample code, such as a simple snippet, if
   possible.
 * Screenshots can help, but if there's important text such as code or error
   messages in them, please also provide those.

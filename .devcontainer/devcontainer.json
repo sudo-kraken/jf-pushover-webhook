@@ -7,7 +7,7 @@
     "ghcr.io/devcontainers/features/common-utils:2": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/python:1": {
-      "version": "3.14"
+      "version": "3.13"
     },
     "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
@@ -39,11 +39,8 @@
     "UV_INSTALL_DIR": "/usr/local/bin",
     "UV_LINK_MODE": "copy"
   },
-  "mounts": [
-    "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
-  ],
   "remoteUser": "vscode",
   "forwardPorts": [8484],
-  "postCreateCommand": "uv sync",
-  "postStartCommand": "printf \"\\nRun: uv run gunicorn -w 4 -b 0.0.0.0:8484 app:app\\n\""
+  "postCreateCommand": "uv sync --locked --all-extras",
+  "postStartCommand": "printf \"\\nRun: uv run gunicorn -w 2 -b 0.0.0.0:8484 app.app:app\\n\""
 }
