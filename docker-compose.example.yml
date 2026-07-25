@@ -1,24 +1,32 @@
-
-version: '3.9'
-
 services:
   jf-pushover-webhook:
     image: ghcr.io/sudo-kraken/jf-pushover-webhook:latest
     ports:
-      - "8484:8484"
+      - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-8484}:${PORT:-8484}"
     environment:
-      AUTH_TOKEN: "your_auth_token"
-      PUSHOVER_API_TOKEN: "your_pushover_api_token"
-      PUSHOVER_USER_KEY: "your_pushover_user_key"
-      JELLYFIN_BASE_URL: "http://your_jellyfin_url:port"
-      # Optional
+      AUTH_TOKEN: "${AUTH_TOKEN:?Set AUTH_TOKEN in your environment}"
+      PUSHOVER_API_TOKEN: "${PUSHOVER_API_TOKEN:?Set PUSHOVER_API_TOKEN in your environment}"
+      PUSHOVER_USER_KEY: "${PUSHOVER_USER_KEY:?Set PUSHOVER_USER_KEY in your environment}"
+      JELLYFIN_BASE_URL: "${JELLYFIN_BASE_URL:-}"
+      IMAGE_BASE_URL: "${IMAGE_BASE_URL:-}"
       REQUEST_TIMEOUT: "${REQUEST_TIMEOUT:-10}"
-      FLASK_RUN_HOST: "0.0.0.0"
-      FLASK_RUN_PORT: "8484"
+      IMAGE_DOWNLOAD_TIMEOUT: "${IMAGE_DOWNLOAD_TIMEOUT:-15}"
+      MAX_IMAGE_BYTES: "${MAX_IMAGE_BYTES:-5242880}"
+      MAX_REQUEST_BYTES: "${MAX_REQUEST_BYTES:-1048576}"
+      PORT: "${PORT:-8484}"
+      WEB_CONCURRENCY: "${WEB_CONCURRENCY:-2}"
+      WORKER_TIMEOUT: "${WORKER_TIMEOUT:-45}"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8484/health || exit 1"]
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:$${PORT:-8484}/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+    read_only: true
+    tmpfs:
+      - /tmp:size=16m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     restart: unless-stopped

@@ -1,0 +1,17 @@
+.git
+.github
+.devcontainer
+.venv
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+.coverage
+.pytest_cache
+.ruff_cache
+.env
+.env.*
+tests
+docs
+podman-quadlet
+*.md
+docker-compose*.yml

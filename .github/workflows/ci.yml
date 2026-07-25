@@ -25,14 +25,19 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: "0.9.30"
 
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version-file: ".python-version"
 
+      - name: Check uv lock
+        run: uv lock --check
+
       - name: Install the project
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
 
       - name: Run ruff format
         run: uv run ruff format --check .
@@ -40,15 +45,13 @@ jobs:
       - name: Run ruff check
         run: uv run ruff check .
 
-      - name: Run ruff uv lock check
-        run: uv lock --check
-
   test:
     name: Test
     runs-on: ubuntu-24.04
     permissions:
       contents: read
     strategy:
+      fail-fast: false
       matrix:
         python-version:
           - "3.9"
@@ -57,6 +60,8 @@ jobs:
           - "3.12"
           - "3.13"
           - "3.14"
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -65,12 +70,57 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@fac544c07dec837d0ccb6301d7b5580bf5edae39 # v8.2.0
+        with:
+          version: "0.9.30"
 
       - name: Set up Python ${{ matrix.python-version }}
         run: uv python install ${{ matrix.python-version }}
 
       - name: Install the project
-        run: uv sync --all-extras
+        run: uv sync --locked --all-extras
+
+      - name: Verify selected Python
+        run: >-
+          uv run python -c
+          "import sys; expected = tuple(map(int, '${{ matrix.python-version }}'.split('.')));
+          assert sys.version_info[:2] == expected, (sys.version, expected)"
 
       - name: Run tests
-        run: uv run pytest --cov
+        run: uv run pytest
+
+  container:
+    name: Production container
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+
+      - name: Build production image
+        run: docker build --tag jf-pushover-webhook:test .
+
+      - name: Smoke test production image
+        run: |
+          docker run --detach --name jf-pushover-webhook \
+            --publish 127.0.0.1:18484:8484 \
+            --env AUTH_TOKEN=test-auth-token \
+            --env PUSHOVER_API_TOKEN=test-api-token \
+            --env PUSHOVER_USER_KEY=test-user-key \
+            jf-pushover-webhook:test
+
+          for attempt in {1..20}; do
+            if curl --fail --silent http://127.0.0.1:18484/health; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          docker logs jf-pushover-webhook
+          exit 1
+
+      - name: Clean up test container
+        if: always()
+        run: docker rm --force jf-pushover-webhook || true

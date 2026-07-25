@@ -8,7 +8,7 @@ _A minimal Flask relay that accepts webhook calls and forwards notifications to 
 
 <div align="center">
 
-[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/jf-pushover-webhook?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken//jf-pushover-webhook/pkgs/container//jf-pushover-webhook) [![Helm](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fhelm-charts%2Frefs%2Fheads%2Fmain%2Fcharts%2Fjf-pushover-webhook%2FChart.yaml&query=%24.version&label=&logo=helm&style=for-the-badge&logoColor=0F1487&color=white)](https://github.com/sudo-kraken/helm-charts/tree/main/charts/jf-pushover-webhook) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2F/jf-pushover-webhook%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/blob/main/pyproject.toml)
+[![Docker](https://img.shields.io/github/v/tag/sudo-kraken/jf-pushover-webhook?label=docker&logo=docker&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/pkgs/container/jf-pushover-webhook) [![Helm](https://img.shields.io/badge/dynamic/yaml?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fhelm-charts%2Frefs%2Fheads%2Fmain%2Fcharts%2Fjf-pushover-webhook%2FChart.yaml&query=%24.version&label=&logo=helm&style=for-the-badge&logoColor=0F1487&color=white)](https://github.com/sudo-kraken/helm-charts/tree/main/charts/jf-pushover-webhook) [![Python](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2Fsudo-kraken%2Fjf-pushover-webhook%2Fmain%2Fpyproject.toml&logo=python&logoColor=yellow&color=3776AB&style=for-the-badge)](https://github.com/sudo-kraken/jf-pushover-webhook/blob/main/pyproject.toml)
 </div>
 
 <div align="center">
@@ -25,6 +25,8 @@ _A minimal Flask relay that accepts webhook calls and forwards notifications to 
 - [Prerequisites](#prerequisites)
 - [Quick start](#quick-start)
 - [Docker](#docker)
+- [Podman Quadlet](#podman-quadlet)
+- [Kubernetes (Helm)](#kubernetes-helm)
 - [Configuration](#configuration)
 - [Health](#health)
 - [Endpoints](#endpoints)
@@ -38,23 +40,25 @@ _A minimal Flask relay that accepts webhook calls and forwards notifications to 
 
 ## Overview
 
-The service accepts JSON payloads from upstream systems and relays a formatted message to Pushover. A basic Bearer token can be used to restrict access. A health endpoint is provided for liveness checks.
+The service accepts JSON payloads from upstream systems and relays a formatted message to Pushover. POST endpoints require a Bearer token, and outbound image hosts are controlled only through server-side configuration.
 
 ## Architecture at a glance
 
-- Flask app factory with `app:app` WSGI target
+- Flask application with `app.app:app` WSGI target
 - Two POST endpoints: generic `/webhook` and Jellyfin styled `/jf-pushover-webhook`
-- Optional Bearer authentication
-- Health endpoint `GET /health`
+- Required Bearer authentication for notification delivery
+- Separate liveness and configuration-readiness endpoints
 
 ## Features
 
 - Generic webhook relay via `POST /webhook`
 - Jellyfin compatible relay via `POST /jf-pushover-webhook`
-- Optional Bearer token authentication using `AUTH_TOKEN`
-- Outbound request timeout control with `REQUEST_TIMEOUT`
+- Bearer token authentication using `AUTH_TOKEN`
+- Server-controlled image sources with relative request paths
+- Bounded request bodies and image downloads
+- Per-request and total image-download timeouts
 - Simple service information page at `/`
-- `/health` endpoint for liveness checks
+- `/live` and `/ready` health endpoints
 - Prebuilt container image on GHCR
 
 ## Prerequisites
@@ -69,8 +73,10 @@ Local development with uv
 ```bash
 export PUSHOVER_API_TOKEN=your-app-token
 export PUSHOVER_USER_KEY=your-user-key
-uv sync --all-extras
-uv run flask --app app:app run --host 0.0.0.0 --port ${PORT:-8484}
+export AUTH_TOKEN="$(openssl rand -hex 32)"
+export JELLYFIN_BASE_URL=http://jellyfin.example:8096
+uv sync --locked --all-extras
+uv run flask --app app.app:app run --host 127.0.0.1 --port ${PORT:-8484}
 ```
 
 ## Docker
@@ -82,8 +88,48 @@ docker pull ghcr.io/sudo-kraken/jf-pushover-webhook:latest
 docker run --rm -p 8484:8484 \
   -e PUSHOVER_API_TOKEN=your-app-token \
   -e PUSHOVER_USER_KEY=your-user-key \
+  -e AUTH_TOKEN=replace-with-a-long-random-token \
+  -e JELLYFIN_BASE_URL=http://jellyfin.example:8096 \
   ghcr.io/sudo-kraken/jf-pushover-webhook:latest
 ```
+
+The supplied Compose example requires the three secret values to be present in your shell
+environment. `JELLYFIN_BASE_URL` is optional but enables Jellyfin artwork:
+
+```bash
+export AUTH_TOKEN=replace-with-a-long-random-token
+export PUSHOVER_API_TOKEN=your-app-token
+export PUSHOVER_USER_KEY=your-user-key
+export JELLYFIN_BASE_URL=http://jellyfin.example:8096
+docker compose -f docker-compose.example.yml up -d
+```
+
+By default, the Compose example binds only to `127.0.0.1`. Set `BIND_ADDRESS=0.0.0.0` only when direct network exposure is intended.
+
+## Podman Quadlet
+
+Copy the Quadlet and its environment template into your user systemd configuration:
+
+```bash
+mkdir -p ~/.config/containers/systemd
+cp podman-quadlet/pushover-webhook.container ~/.config/containers/systemd/
+cp podman-quadlet/pushover-webhook.env.example \
+  ~/.config/containers/systemd/pushover-webhook.env
+chmod 600 ~/.config/containers/systemd/pushover-webhook.env
+```
+
+Edit `pushover-webhook.env`, then reload and start the service:
+
+```bash
+systemctl --user daemon-reload
+systemctl --user start pushover-webhook.service
+```
+
+Quadlet-generated services are transient and should be started rather than enabled. If the
+service must keep running after logout, enable user lingering with `loginctl enable-linger`.
+The example binds to loopback and runs with a read-only root filesystem, no added capabilities,
+and no-new-privileges.
+
 ## Kubernetes (Helm)
 
 You can deploy the app on Kubernetes using the published Helm chart:
@@ -97,13 +143,18 @@ helm install jf-pushover-webhook oci://ghcr.io/sudo-kraken/helm-charts/jf-pushov
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| PORT | no | 8484 | Port to bind |
-| WEB_CONCURRENCY | no | 2 | Gunicorn worker processes |
+| PORT | no | 8484 | Gunicorn port to bind |
+| WEB_CONCURRENCY | no | 2 | Gunicorn worker processes; keep at 2 or fewer to respect Pushover concurrency guidance |
+| WORKER_TIMEOUT | no | 45 | Gunicorn request timeout in seconds |
 | PUSHOVER_API_TOKEN | yes |  | Pushover application token |
 | PUSHOVER_USER_KEY | yes |  | Pushover user key |
-| AUTH_TOKEN | no |  | Bearer token required if set |
-| JELLYFIN_BASE_URL | no |  | Fallback base URL for images |
-| REQUEST_TIMEOUT | no | 10 | HTTP timeout seconds for outbound calls |
+| AUTH_TOKEN | yes |  | Bearer token required by notification POST endpoints |
+| JELLYFIN_BASE_URL | no |  | Server-controlled Jellyfin base URL used for artwork |
+| IMAGE_BASE_URL | no |  | Server-controlled base URL used with `/webhook`'s relative `image_path` field |
+| REQUEST_TIMEOUT | no | 10 | Connect/read timeout seconds for each outbound operation |
+| IMAGE_DOWNLOAD_TIMEOUT | no | 15 | End-to-end image fetch budget in seconds; socket operations are capped to this value |
+| MAX_IMAGE_BYTES | no | 5242880 | Maximum downloaded attachment size |
+| MAX_REQUEST_BYTES | no | 1048576 | Maximum inbound request-body size |
 
 `.env` example
 
@@ -112,33 +163,63 @@ PORT=8484
 WEB_CONCURRENCY=2
 PUSHOVER_API_TOKEN=replace-me
 PUSHOVER_USER_KEY=replace-me
-AUTH_TOKEN=optional-bearer
+AUTH_TOKEN=replace-with-a-long-random-token
+JELLYFIN_BASE_URL=http://jellyfin.example:8096
+IMAGE_BASE_URL=https://images.example.com
 REQUEST_TIMEOUT=10
+IMAGE_DOWNLOAD_TIMEOUT=15
+MAX_IMAGE_BYTES=5242880
+MAX_REQUEST_BYTES=1048576
+WORKER_TIMEOUT=45
 ```
 
 ## Health
 
-- `GET /health` returns `{ "ok": true }`
+- `GET /live` returns HTTP 200 when the process can serve requests.
+- `GET /ready` validates required authentication, Pushover settings, and configured base URLs.
+- `GET /health` is a backwards-compatible alias for `/ready`.
+
+Readiness returns HTTP 200 when configuration is usable, or HTTP 500 with `missing` and
+`invalid` variable names.
 
 ## Endpoints
 
-- `POST /webhook` accepts JSON payloads and sends a Pushover message
-- `POST /jf-pushover-webhook` accepts Jellyfin style payloads and relays to Pushover
+- `POST /webhook` accepts JSON, form data, or JSON encoded as `text/plain`
+- `POST /jf-pushover-webhook` accepts Jellyfin-style payloads and relays to Pushover
 - `GET /` service information
+
+Both POST endpoints require `Authorization: Bearer <AUTH_TOKEN>`. Jellyfin artwork is best-effort:
+if the configured image is unavailable, the text notification is still sent.
 
 Example
 
 ```bash
 curl -X POST http://localhost:8484/webhook \
+  -H "Authorization: Bearer ${AUTH_TOKEN}" \
   -H "Content-Type: application/json" \
   -d '{"title":"Backup complete","message":"All good"}'
 ```
 
+For a generic attachment, configure `IMAGE_BASE_URL` and send an absolute path rather than a
+full URL:
+
+```json
+{"title":"Camera","message":"Motion detected","image_path":"/events/latest.jpg"}
+```
+
+For security, payloads and headers cannot choose an outbound host, absolute `image_url` values
+are rejected, and image redirects are not followed. `image_path` may contain nested path
+segments made from letters, numbers, `.`, `_`, `~`, and `-`; percent-encoded or traversal
+segments are rejected. Deployments upgrading from the earlier `ALLOWED_IMAGE_ORIGINS` option
+should replace it with one `IMAGE_BASE_URL` and update webhook payloads to send `image_path`.
+
 ## Production notes
 
-- Set `AUTH_TOKEN` for a simple shared secret. For internet facing deployments put the service behind an authenticating reverse proxy.
-- Tune `WEB_CONCURRENCY` based on CPU cores and expected throughput.
-- Keep `REQUEST_TIMEOUT` conservative to avoid long-hanging outbound calls to Pushover.
+- Generate a long, random `AUTH_TOKEN`. For internet-facing deployments, also put the service behind an authenticating reverse proxy.
+- Keep `WEB_CONCURRENCY` at 2 or fewer; Pushover asks clients not to make more than two concurrent API requests.
+- Keep `REQUEST_TIMEOUT`, `IMAGE_DOWNLOAD_TIMEOUT`, and `WORKER_TIMEOUT` aligned so failed
+  upstream calls cannot occupy workers indefinitely.
+- Apply an outbound network policy where available.
 - If running behind a reverse proxy, ensure client IP and scheme are preserved appropriately.
 
 ## Development
@@ -146,18 +227,19 @@ curl -X POST http://localhost:8484/webhook \
 ```bash
 uv run ruff check --fix .
 uv run ruff format .
-uv run pytest --cov
+uv run pytest
 ```
 
 ## Troubleshooting
 
 - 401 responses usually indicate a missing or wrong `AUTH_TOKEN` when it is required.
-- 408 or timeouts when sending to Pushover can be reduced by increasing `REQUEST_TIMEOUT`.
+- 504 responses indicate an outbound Pushover or image timeout; adjust timeouts only after checking connectivity.
+- 400 responses for image paths mean the value is not a safe absolute path below `IMAGE_BASE_URL`.
 - If payloads are rejected, confirm `Content-Type: application/json` and validate your JSON structure.
 
 ## Licence
 
-This project is licensed under the MIT Licence. See the [LICENCE](LICENCE) file for details.
+This project is licensed under the MIT Licence. See the [LICENSE](LICENSE) file for details.
 
 ## Security
 
