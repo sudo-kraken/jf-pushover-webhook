@@ -9,7 +9,7 @@ TimeoutStartSec=900
 WantedBy=default.target
 
 [Container]
-Image=ghcr.io/sudo-kraken/jf-pushover-webhook:latest
+Image=ghcr.io/sudo-kraken/jf-pushover-webhook:latest@sha256:c149d037a44a3692a85009f81326b69a273445a707f80114079e8a1f292d7913
 Pull=newer
 ContainerName=jf-pushover-webhook
 HostName=jf-pushover-webhook
